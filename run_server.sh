@@ -1,0 +1,1 @@
+\Users\freju\PycharmProjects\TableauDeBordDevise\.venv\Scripts\python.exe \Users\freju\PycharmProjects\TableauDeBordDevise\src\manage.py runserver
