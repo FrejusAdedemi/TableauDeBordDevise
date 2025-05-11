@@ -2,56 +2,1151 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Tableau de bord</title>
+    <title>Tableau de bord des devises</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-trendline@0.1.3/dist/chartjs-plugin-trendline.min.js"></script>
-</head>
-<body class="bg-black">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --bg-dark: #121212;
+            --card-bg: #1e1e1e;
+            --card-header: #2c2c2c;
+            --border-color: #333;
+            --text-color: #e0e0e0;
+            --chart-bg: #2a2a2a;
+            --hover-color: #0b5ed7;
+        }
 
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col">
-                <h1 class="text-white">Tableau de bord-{{ page_label }}</h1>
-                <a href="{% url 'home' days_range=7 currencies=currencies  %}" class="btn {% if page_label == 'Semaine' %} btn-info{% else %}btn-secondary{% endif %}">Semaine</a>
-                <a href="{% url 'home' days_range=30 currencies=currencies  %}" class="btn {% if page_label == 'Mois' %} btn-info{% else %}btn-secondary{% endif %}">Mois</a>
-                <a href="{% url 'home' days_range=365 currencies=currencies  %}" class="btn {% if page_label == 'Année' %} btn-info{% else %}btn-secondary{% endif %}">Année</a>
+        /* Mode clair variables */
+        [data-theme="light"] {
+            --primary-color: #0d6efd;
+            --bg-dark: #f5f5f5;
+            --card-bg: #ffffff;
+            --card-header: #f8f9fa;
+            --border-color: #dee2e6;
+            --text-color: #333333;
+            --chart-bg: #f8f9fa;
+            --hover-color: #0b5ed7;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: all 0.3s ease;
+            padding-bottom: 60px;
+        }
+
+        .navbar {
+            background-color: var(--card-bg);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            padding: 10px 0;
+            margin-bottom: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary-color) !important;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin-bottom: 25px;
+            border-radius: 8px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .card-header {
+            background-color: var(--card-header);
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 7px 7px 0 0 !important;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--hover-color);
+            border-color: var(--hover-color);
+        }
+
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .period-selector {
+            margin-bottom: 20px;
+        }
+
+        .form-control {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+
+        .form-control:focus {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+
+        .form-text {
+            color: #aaa;
+        }
+
+        canvas {
+            background-color: var(--chart-bg);
+            border-radius: 4px;
+            padding: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            display: inline-block;
+        }
+
+        .chart-title {
+            font-size: 1.2rem;
+            margin-bottom: 0;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .trend-indicator {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.9rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-left: 10px;
+        }
+
+        .trend-up {
+            background-color: rgba(75, 192, 75, 0.2);
+            color: #4bc04b;
+        }
+
+        .trend-down {
+            background-color: rgba(255, 99, 132, 0.2);
+            color: #ff6384;
+        }
+
+        .trend-neutral {
+            background-color: rgba(255, 205, 86, 0.2);
+            color: #ffcd56;
+        }
+
+        .currency-info {
+            display: flex;
+            flex-direction: column;
+            border-top: 1px solid var(--border-color);
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+
+        .currency-stat {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .theme-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .theme-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 30px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+
+        .btn-tool {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            margin-left: 5px;
+        }
+
+        .loader {
+            display: none;
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid var(--primary-color);
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Footer style */
+        footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: var(--card-bg);
+            padding: 10px 0;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .card {
+                margin-bottom: 15px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .chart-container {
+                height: 250px;
+            }
+        }
+
+        /* Animation pour les cartes */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        /* Stats widget */
+        .stats-card {
+            animation-delay: 0.2s;
+        }
+
+        /* Tooltip personnalisé */
+        .custom-tooltip {
+            background: rgba(0, 0, 0, 0.8) !important;
+            border-radius: 4px !important;
+            padding: 10px !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-chart-line me-2"></i>Forex Monitor
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <div class="d-flex align-items-center ms-3">
+                            <span class="me-2"><i class="fas fa-sun"></i></span>
+                            <label class="theme-switch">
+                                <input type="checkbox" id="theme-toggle">
+                                <span class="slider"></span>
+                            </label>
+                            <span class="ms-2"><i class="fas fa-moon"></i></span>
+                        </div>
+                    </li>
+                </ul>
             </div>
         </div>
+    </nav>
 
-        <div class="row justify-content-center">
-            {% for currency,rates in data.items %}
-            <div class="col-md-10 col-lg-6">
-                <canvas id="chart-{{ currency }}"></canvas>
+    <div class="container mt-4 mb-5">
+        <h1>Tableau de bord des taux de change - <span id="page-label">{{ page_label }}</span></h1>
+
+        <div class="period-selector">
+            <div class="btn-group" role="group">
+                <button class="btn btn-outline-primary period-btn" data-days="7">Semaine</button>
+                <button class="btn btn-outline-primary period-btn" data-days="30">Mois</button>
+                <button class="btn btn-primary period-btn active" data-days="365">Année</button>
             </div>
-            {% endfor %}
+            <button class="btn btn-outline-primary ms-2" id="refresh-data">
+                <i class="fas fa-sync-alt"></i> Actualiser
+                <span class="loader ms-1" id="refresh-loader"></span>
+            </button>
+        </div>
+
+        <div class="row">
+            <!-- Formulaire de sélection de devise -->
+            <div class="col-md-4 mb-4">
+                <div class="card animate-in">
+                    <div class="card-header">
+                        <h5 class="chart-title">
+                            <i class="fas fa-coins me-2"></i>
+                            Choisir les devises
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="currency-form" method="get" action="/home/">
+                            <div class="mb-3">
+                                <label for="currencies" class="form-label">Liste des devises (séparées par des virgules):</label>
+                                <input type="text" class="form-control" id="currencies" name="currencies"
+                                       value="USD,EUR,GBP,JPY" required placeholder="USD,EUR,GBP,JPY" list="currency-list">
+                                <datalist id="currency-list">
+                                    <option value="USD">
+                                    <option value="EUR">
+                                    <option value="GBP">
+                                    <option value="JPY">
+                                    <option value="CAD">
+                                    <option value="AUD">
+                                    <option value="CHF">
+                                    <option value="NZD">
+                                    <option value="CNY">
+                                    <option value="SEK">
+                                </datalist>
+                                <div class="form-text">Choisis des devises valides (ex: USD, EUR, JPY...). Séparées par virgules.</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-1"></i> Afficher les taux
+                            </button>
+                        </form>
+
+                    </div>
+                </div>
+
+                <!-- Widget de statistiques générales -->
+                <div class="card stats-card animate-in">
+                    <div class="card-header">
+                        <h5 class="chart-title">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            Statistiques globales
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Ces données seront remplies dynamiquement -->
+                        <div id="global-stats">
+                            <div class="currency-stat">
+                                <span>Devise la plus volatile:</span>
+                                <span id="most-volatile">JPY (±2.4%)</span>
+                            </div>
+                            <div class="currency-stat">
+                                <span>Meilleure performance:</span>
+                                <span id="best-performance">USD (+5.2%)</span>
+                            </div>
+                            <div class="currency-stat">
+                                <span>Dernière mise à jour:</span>
+                                <span id="last-update">11/05/2025 14:30</span>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-center mt-3">
+                            <button class="btn btn-sm btn-outline-primary me-2" id="download-csv">
+                                <i class="fas fa-file-csv me-1"></i> CSV
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" id="download-json">
+                                <i class="fas fa-file-code me-1"></i> JSON
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cartes de devises (générées dynamiquement) -->
+            <div class="col-md-8">
+                <div class="row" id="currency-cards">
+                    <!-- Les cartes seront générées dynamiquement via JavaScript -->
+                </div>
+            </div>
+
+            <!-- Modal pour afficher le graphique en plein écran -->
+            <div class="modal fade" id="chartModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="chartModalLabel">Graphique détaillé</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div style="height: 500px;">
+                                <canvas id="modal-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-<script>
-    {% for currency,rates in data.items %}
-        var ctx = document.getElementById("chart-{{ currency }}");
-        new Chart(ctx, {
-            type:'line',
-            data:{
-                labels:{{ days_labels|safe }},
-                datasets:[{
-                label:"{{ currency }}",
-                data:{{ rates|safe }},
-                fill:true,
-                borderColor:'rgb(255,128,128)',
-                backgroundColor:'rgb(2,128,128)',
-                tension:0.8,
-                trendlineLinear:{
-                     style:"#9fd6f4",
-                     width:5,
-                     lineStyle:"solid"
-                 },
 
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <span>© 2025 Forex Monitor - Développé pour mon portfolio</span>
+        </div>
+    </footer>
+    {{ days_labels|json_script:"json-dates" }}
+    {{ data|json_script:"json-rates" }}
+    <script>
+      const realData = {
+        dates: JSON.parse(document.getElementById('json-dates').textContent),
+        currencies: JSON.parse(document.getElementById('json-rates').textContent)
+      };
+    </script>
+
+
+
+    <!-- Scripts Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+    // Récupération des paramètres de l'URL
+    function getURLParameters() {
+        const url = window.location.pathname;
+        const parts = url.split('/').filter(part => part);
+
+        let days = 365; // Valeur par défaut
+        let currencies = "USD,EUR,GBP,JPY"; // Valeur par défaut
+
+        // Si l'URL contient les paramètres attendus (exemple: /home/365/USD,EUR/)
+        if (parts.length >= 3 && parts[0] === "home") {
+            days = parseInt(parts[1]) || 365;
+            currencies = parts[2] || currencies;
+        } else if (parts.length >= 1 && parts[0] === "home") {
+            // Extraire des paramètres de la requête
+            const urlParams = new URLSearchParams(window.location.search);
+            const currParam = urlParams.get('currencies');
+            if (currParam) currencies = currParam;
+        }
+
+        return { days, currencies: currencies.split(',') };
+    }
+
+    // Palettes de couleurs par devise
+    const chartColors = {
+        'USD': {
+            border: '#4e79a7',
+            background: 'rgba(78, 121, 167, 0.2)'
+        },
+        'EUR': {
+            border: '#59a14f',
+            background: 'rgba(89, 161, 79, 0.2)'
+        },
+        'GBP': {
+            border: '#edc948',
+            background: 'rgba(237, 201, 72, 0.2)'
+        },
+        'JPY': {
+            border: '#af7aa1',
+            background: 'rgba(175, 122, 161, 0.2)'
+        },
+        'CAD': {
+            border: '#ff9da7',
+            background: 'rgba(255, 157, 167, 0.2)'
+        },
+        'AUD': {
+            border: '#9c755f',
+            background: 'rgba(156, 117, 95, 0.2)'
+        },
+        'default': {
+            border: '#3366cc',
+            background: 'rgba(51, 102, 204, 0.2)'
+        }
+    };
+
+    // Liste blanche des codes devises valides (à adapter si besoin)
+    const validCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'NZD', 'CNY', 'SEK'];
+
+    // Fonction pour formater les dates
+    function formatDate(date) {
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${year}-${month}-${day}`;
+    }
+
+    // Fonction pour obtenir les couleurs d'une devise
+    function getColorsForCurrency(currency) {
+        return chartColors[currency] || chartColors.default;
+    }
+
+    // Formatte les dates pour l'affichage
+    function formatDisplayDates(dates, maxLabels) {
+        if (!dates || dates.length === 0) return [];
+
+        const totalDates = dates.length;
+        const step = Math.ceil(totalDates / maxLabels);
+
+        return dates.map((date, index) => {
+            if (index % step === 0) {
+                const parts = date.split('-');
+                if (parts.length >= 3) {
+                    return parts[2] + '/' + parts[1];
+                }
+                return date;
+            }
+            return '';
+        });
+    }
+
+    // Calcule les statistiques pour une série de données
+    function calculateStats(data) {
+        const numericData = data.map(d => parseFloat(d));
+        const min = Math.min(...numericData).toFixed(4);
+        const max = Math.max(...numericData).toFixed(4);
+        const avg = (numericData.reduce((a, b) => a + b, 0) / numericData.length).toFixed(4);
+
+        // Calcul de la tendance (% de changement sur la période)
+        const firstValue = numericData[0];
+        const lastValue = numericData[numericData.length - 1];
+        const percentChange = ((lastValue - firstValue) / firstValue * 100).toFixed(1);
+
+        return {
+            min,
+            max,
+            avg,
+            percentChange
+        };
+    }
+
+    // Crée ou met à jour un graphique
+    function createOrUpdateChart(currencyCode, data, dates) {
+        const canvasId = `chart-${currencyCode}`;
+        const canvas = document.getElementById(canvasId);
+        const stats = calculateStats(data);
+
+        if (!canvas) return;
+
+        // Vérifier si le graphique existe déjà
+        const existingChart = Chart.getChart(canvas);
+        if (existingChart) {
+            existingChart.destroy();
+        }
+
+        const colors = getColorsForCurrency(currencyCode);
+        const formattedDates = formatDisplayDates(dates, 12);
+
+        // Création du nouveau graphique
+        new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: currencyCode,
+                    data: data,
+                    fill: true,
+                    borderColor: colors.border,
+                    backgroundColor: colors.background,
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0.4
+                    // Suppression de trendlineLinear qui cause l'erreur
                 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            color: getComputedStyle(document.body).getPropertyValue('--text-color')
+                        }
+                    },
+                    title: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: 'rgba(255, 255, 255, 0.2)',
+                        borderWidth: 1,
+                        padding: 10,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `${currencyCode}: ${parseFloat(context.raw).toFixed(4)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: getComputedStyle(document.body).getPropertyValue('--text-color'),
+                            maxRotation: 45,
+                            minRotation: 45,
+                            callback: function(value, index) {
+                                return formattedDates[index];
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        }
+                    },
+                    y: {
+                        beginAtZero: false,
+                        ticks: {
+                            color: getComputedStyle(document.body).getPropertyValue('--text-color')
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                animations: {
+                    tension: {
+                        duration: 1000,
+                        easing: 'linear'
+                    }
+                }
             }
         });
-    {% endfor %}
-</script>
+
+        // Mise à jour des statistiques dans la carte
+        const card = document.querySelector(`.currency-card[data-currency="${currencyCode}"]`);
+        if (card) {
+            // Mettre à jour les statistiques
+            const statElements = card.querySelectorAll('.currency-stat span:nth-child(2)');
+            if (statElements.length >= 3) {
+                statElements[0].textContent = stats.min;
+                statElements[1].textContent = stats.max;
+                statElements[2].textContent = stats.avg;
+            }
+
+            // Mettre à jour l'indicateur de tendance
+            const trendIndicator = card.querySelector('.trend-indicator');
+            if (trendIndicator) {
+                trendIndicator.className = 'trend-indicator';
+                const changeValue = parseFloat(stats.percentChange);
+
+                if (changeValue > 0.5) {
+                    trendIndicator.classList.add('trend-up');
+                    trendIndicator.innerHTML = `<i class="fas fa-arrow-up me-1"></i>${Math.abs(changeValue)}%`;
+                } else if (changeValue < -0.5) {
+                    trendIndicator.classList.add('trend-down');
+                    trendIndicator.innerHTML = `<i class="fas fa-arrow-down me-1"></i>${Math.abs(changeValue)}%`;
+                } else {
+                    trendIndicator.classList.add('trend-neutral');
+                    trendIndicator.innerHTML = `<i class="fas fa-equals me-1"></i>${Math.abs(changeValue)}%`;
+                }
+            }
+        }
+
+        return stats;
+    }
+
+    // Génère les cartes HTML pour les devises
+    function generateCurrencyCards(currencies) {
+        let cardsHTML = '';
+        const cardContainer = document.getElementById('currency-cards');
+
+        cardContainer.innerHTML = ''; // Vider le conteneur
+
+        currencies.forEach(currency => {
+            if (!realData.currencies[currency]) {
+                console.warn(`Données non disponibles pour ${currency}`);
+                return;
+            }
+
+            // Créer un élément de colonne
+            const colDiv = document.createElement('div');
+            colDiv.className = 'col-md-6 mb-4 currency-card animate-in';
+            colDiv.setAttribute('data-currency', currency);
+
+            // Déterminer l'icône à utiliser
+            let icon;
+            switch (currency) {
+                case 'USD': icon = 'dollar-sign'; break;
+                case 'EUR': icon = 'euro-sign'; break;
+                case 'GBP': icon = 'pound-sign'; break;
+                case 'JPY': icon = 'yen-sign'; break;
+                case 'CAD': icon = 'dollar-sign'; break;
+                case 'AUD': icon = 'dollar-sign'; break;
+                default: icon = 'coins';
+            }
+
+            // Structure de la carte
+            colDiv.innerHTML = `
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="chart-title">
+                            <i class="fas fa-${icon} me-2"></i>
+                            ${currency} - Évolution du taux
+                            <span class="trend-indicator trend-neutral">
+                                <i class="fas fa-equals me-1"></i>0.0%
+                            </span>
+                        </h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary btn-tool zoom-btn">
+                                <i class="fas fa-search-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="chart-${currency}"></canvas>
+                        </div>
+                        <div class="currency-info">
+                            <div class="currency-stat">
+                                <span>Minimum:</span>
+                                <span>0.00</span>
+                            </div>
+                            <div class="currency-stat">
+                                <span>Maximum:</span>
+                                <span>0.00</span>
+                            </div>
+                            <div class="currency-stat">
+                                <span>Moyenne:</span>
+                                <span>0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            cardContainer.appendChild(colDiv);
+
+            // Ajouter l'écouteur d'événement pour le zoom
+            const zoomBtn = colDiv.querySelector('.zoom-btn');
+            zoomBtn.addEventListener('click', function() {
+                openFullscreenChart(currency);
+            });
+        });
+    }
+
+    // Initialisation des graphiques
+    function initCharts(days = 365, selectedCurrencies = ['USD', 'EUR', 'GBP', 'JPY']) {
+        // Filtrer les devises non valides
+        selectedCurrencies = selectedCurrencies.filter(c => validCurrencies.includes(c));
+
+        // Générer les cartes pour les devises sélectionnées
+        generateCurrencyCards(selectedCurrencies);
+
+        // Déterminer l'étendue des données à utiliser en fonction des jours demandés
+        const availableDays = realData.dates.length;
+        const daysToUse = Math.min(days, availableDays);
+        const selectedDates = realData.dates.slice(-daysToUse);
+
+        let allStats = [];
+
+        selectedCurrencies.forEach(currency => {
+            if (realData.currencies[currency]) {
+                const currencyData = realData.currencies[currency].slice(-daysToUse);
+                const stats = createOrUpdateChart(currency, currencyData, selectedDates);
+                if (stats) {
+                    allStats.push({
+                        currency,
+                        stats
+                    });
+                }
+            }
+        });
+
+        // Mettre à jour les statistiques globales
+        if (allStats.length > 0) {
+            updateGlobalStats(allStats);
+        }
+
+        // Mettre à jour le titre de la page
+        updatePageTitle(days);
+    }
+
+    // Met à jour le titre de la page
+    function updatePageTitle(days) {
+        const pageLabel = document.getElementById('page-label');
+        if (pageLabel) {
+            if (days === 7) pageLabel.textContent = 'Semaine';
+            else if (days === 30) pageLabel.textContent = 'Mois';
+            else pageLabel.textContent = 'Année';
+        }
+    }
+
+    // Met à jour les statistiques globales
+    function updateGlobalStats(allStats) {
+        if (allStats.length === 0) return;
+
+        // Trouver la devise la plus volatile
+        const volatileIndex = allStats.reduce((maxIndex, curr, index, arr) => {
+            const currRange = Math.abs(parseFloat(curr.stats.max) - parseFloat(curr.stats.min));
+            const maxRange = Math.abs(parseFloat(arr[maxIndex].stats.max) - parseFloat(arr[maxIndex].stats.min));
+            return (currRange > maxRange) ? index : maxIndex;
+        }, 0);
+
+        // Trouver la devise avec la meilleure performance
+        const bestPerformanceIndex = allStats.reduce((maxIndex, curr, index, arr) => {
+            return (parseFloat(curr.stats.percentChange) > parseFloat(arr[maxIndex].stats.percentChange)) ? index : maxIndex;
+        }, 0);
+
+        // Mettre à jour l'interface
+        document.getElementById('most-volatile').textContent =
+            `${allStats[volatileIndex].currency} (±${(Math.abs(parseFloat(allStats[volatileIndex].stats.max) - parseFloat(allStats[volatileIndex].stats.min)) / parseFloat(allStats[volatileIndex].stats.avg) * 100).toFixed(1)}%)`;
+
+        document.getElementById('best-performance').textContent =
+            `${allStats[bestPerformanceIndex].currency} (${allStats[bestPerformanceIndex].stats.percentChange > 0 ? '+' : ''}${allStats[bestPerformanceIndex].stats.percentChange}%)`;
+
+        // Mettre à jour la date de dernière mise à jour
+        const now = new Date();
+        document.getElementById('last-update').textContent =
+            `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    }
+
+    // Changement de période
+    function changePeriod(days) {
+        // Mettre à jour le bouton actif
+        document.querySelectorAll('.period-btn').forEach(btn => {
+            btn.classList.remove('btn-primary', 'active');
+            btn.classList.add('btn-outline-primary');
+        });
+
+        const activeBtn = document.querySelector(`.period-btn[data-days="${days}"]`);
+        if (activeBtn) {
+            activeBtn.classList.remove('btn-outline-primary');
+            activeBtn.classList.add('btn-primary', 'active');
+        }
+
+        // Récupérer les devises actuelles
+        const currencyInput = document.getElementById('currencies');
+        const currencyList = currencyInput
+            ? currencyInput.value.split(',').map(c => c.trim().toUpperCase())
+            : ['USD', 'EUR', 'GBP', 'JPY'];
+
+        // Mettre à jour l'URL sans recharger la page
+        window.location.href = `/home/${days}/${currencyList.join(',')}`;
+
+    }
+
+    // Fonction pour simuler le chargement des données
+    function simulateDataLoading() {
+        const loader = document.getElementById('refresh-loader');
+        loader.style.display = 'inline-block';
+
+        // Simule une requête API pour actualiser les données
+        setTimeout(() => {
+            // Dans un environnement réel, on ferait une requête AJAX ici
+            // pour obtenir de nouvelles données depuis l'API
+
+            // Pour le moment, on va simplement réutiliser les données actuelles
+            const { days, currencies } = getURLParameters();
+            initCharts(days, currencies);
+
+            // Cacher le loader
+            loader.style.display = 'none';
+        }, 1000);
+    }
+
+    // Fonction pour basculer entre le mode clair et sombre
+    function toggleTheme() {
+        const isDark = document.body.getAttribute('data-theme') !== 'light';
+        document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+
+        // Mettre à jour les graphiques pour qu'ils correspondent au thème
+        const { days, currencies } = getURLParameters();
+        initCharts(days, currencies);
+    }
+
+    // Fonction pour télécharger les données au format CSV
+    function downloadCSV() {
+        const { days, currencies } = getURLParameters();
+        const availableDays = realData.dates.length;
+        const daysToUse = Math.min(days, availableDays);
+        const selectedDates = realData.dates.slice(-daysToUse);
+
+        // Créer l'en-tête CSV
+        let csvContent = "data:text/csv;charset=utf-8,Date";
+        currencies.forEach(currency => {
+            if (realData.currencies[currency]) {
+                csvContent += `,${currency}`;
+            }
+        });
+        csvContent += "\n";
+
+        // Ajouter les données
+        selectedDates.forEach((date, index) => {
+            csvContent += date;
+            currencies.forEach(currency => {
+                if (realData.currencies[currency] && index < realData.currencies[currency].length) {
+                    csvContent += `,${realData.currencies[currency][index]}`;
+                } else {
+                    csvContent += `,`;
+                }
+            });
+            csvContent += "\n";
+        });
+
+        // Créer un lien de téléchargement
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `forex_data_${selectedDates[0]}_to_${selectedDates[selectedDates.length - 1]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Fonction pour télécharger les données au format JSON
+    function downloadJSON() {
+        const { days, currencies } = getURLParameters();
+        const availableDays = realData.dates.length;
+        const daysToUse = Math.min(days, availableDays);
+        const selectedDates = realData.dates.slice(-daysToUse);
+
+        // Créer l'objet JSON
+        const jsonData = {
+            dates: selectedDates,
+            currencies: {}
+        };
+
+        // Ajouter les données pour chaque devise
+        currencies.forEach(currency => {
+            if (realData.currencies[currency]) {
+                jsonData.currencies[currency] = realData.currencies[currency]
+                    .slice(-daysToUse)
+                    .map(value => parseFloat(value));
+            }
+        });
+
+        // Créer un lien de téléchargement
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(jsonData, null, 2));
+        const link = document.createElement("a");
+        link.setAttribute("href", dataStr);
+        link.setAttribute("download", `forex_data_${selectedDates[0]}_to_${selectedDates[selectedDates.length - 1]}.json`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Gérer l'affichage du graphique en plein écran
+    function openFullscreenChart(currencyCode) {
+        const { days } = getURLParameters();
+        const availableDays = realData.dates.length;
+        const daysToUse = Math.min(days, availableDays);
+        const selectedDates = realData.dates.slice(-daysToUse);
+        const currencyData = realData.currencies[currencyCode].slice(-daysToUse);
+
+        // Mettre à jour le titre de la modal
+        document.getElementById('chartModalLabel').textContent = `${currencyCode} - Évolution détaillée du taux`;
+
+        // Créer le graphique dans la modal
+        const canvas = document.getElementById('modal-chart');
+        const existingChart = Chart.getChart(canvas);
+        if (existingChart) {
+            existingChart.destroy();
+        }
+
+        const colors = getColorsForCurrency(currencyCode);
+
+        new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: selectedDates,
+                datasets: [{
+                    label: currencyCode,
+                    data: currencyData,
+                    fill: true,
+                    borderColor: colors.border,
+                    backgroundColor: colors.background,
+                    borderWidth: 2,
+                    pointRadius: 2,
+                    pointHoverRadius: 6,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    },
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+
+        // Afficher la modal
+        const modal = new bootstrap.Modal(document.getElementById('chartModal'));
+        modal.show();
+    }
+
+    // Event Listeners pour la page
+    document.addEventListener('DOMContentLoaded', function() {
+        // Extraire les paramètres de l'URL
+        const { days, currencies } = getURLParameters();
+
+        // Mettre à jour le champ de saisie des devises
+        const currencyInput = document.getElementById('currencies');
+        if (currencyInput) {
+            currencyInput.value = currencies.join(',');
+        }
+
+        // Mettre à jour le bouton de période actif
+        document.querySelectorAll('.period-btn').forEach(btn => {
+            const btnDays = parseInt(btn.dataset.days);
+            if (btnDays === days) {
+                btn.classList.remove('btn-outline-primary');
+                btn.classList.add('btn-primary', 'active');
+            } else {
+                btn.classList.remove('btn-primary', 'active');
+                btn.classList.add('btn-outline-primary');
+            }
+        });
+
+        // Initialiser les graphiques avec les paramètres de l'URL
+        initCharts(days, currencies);
+
+        // Écouteurs pour les boutons de période
+        document.querySelectorAll('.period-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                changePeriod(parseInt(this.dataset.days));
+            });
+        });
+
+        // Écouteur pour le formulaire
+        document.getElementById('currency-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const currencies = document.getElementById('currencies').value
+                .split(',')
+                .map(c => c.trim().toUpperCase());
+
+            // Vérifie les devises
+            const invalid = currencies.filter(c => !validCurrencies.includes(c));
+            if (invalid.length > 0) {
+                alert(`Devise(s) inconnue(s) : ${invalid.join(', ')}`);
+                return;
+            }
+
+            const activeBtn = document.querySelector('.period-btn.active');
+            const days = activeBtn ? parseInt(activeBtn.dataset.days) : 365;
+
+            window.location.href = `/home/${days}/${currencies.join(',')}`;
+        });
+
+
+        // Écouteur pour le bouton d'actualisation
+        document.getElementById('refresh-data').addEventListener('click', function() {
+            simulateDataLoading();
+        });
+
+        // Écouteur pour le toggle de thème
+        document.getElementById('theme-toggle').addEventListener('change', function() {
+            toggleTheme();
+        });
+
+        // Écouteurs pour les boutons de téléchargement
+        document.getElementById('download-csv').addEventListener('click', function() {
+            downloadCSV();
+        });
+
+        document.getElementById('download-json').addEventListener('click', function() {
+            downloadJSON();
+        });
+
+        // Ajouter des animations de chargement
+        document.querySelectorAll('.card').forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.1}s`;
+        });
+    });
+
+    // Gestion de l'historique du navigateur
+    window.addEventListener('popstate', function(event) {
+        const { days, currencies } = getURLParameters();
+        initCharts(days, currencies);
+    });
+    </script>
 </body>
 </html>
