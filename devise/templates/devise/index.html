@@ -18,6 +18,8 @@
             --text-color: #e0e0e0;
             --chart-bg: #2a2a2a;
             --hover-color: #0b5ed7;
+            --grid-color: rgba(255, 255, 255, 0.15);
+
         }
 
         /* Mode clair variables */
@@ -30,6 +32,7 @@
             --text-color: #333333;
             --chart-bg: #f8f9fa;
             --hover-color: #0b5ed7;
+            --grid-color: rgba(0, 0, 0, 0.1);
         }
 
         body {
@@ -48,6 +51,7 @@
             position: sticky;
             top: 0;
             z-index: 1000;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .navbar-brand {
@@ -58,7 +62,7 @@
         .card {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             margin-bottom: 25px;
             border-radius: 8px;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -66,7 +70,7 @@
 
         .card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
         }
 
         .card-header {
@@ -161,17 +165,17 @@
         }
 
         .trend-up {
-            background-color: rgba(75, 192, 75, 0.2);
+            background-color: rgba(75, 192, 75, 0.3);
             color: #4bc04b;
         }
 
         .trend-down {
-            background-color: rgba(255, 99, 132, 0.2);
+            background-color: rgba(255, 99, 132, 0.3);
             color: #ff6384;
         }
 
         .trend-neutral {
-            background-color: rgba(255, 205, 86, 0.2);
+            background-color: rgba(255, 205, 86, 0.3);
             color: #ffcd56;
         }
 
@@ -267,6 +271,33 @@
             font-size: 0.9rem;
             border-top: 1px solid var(--border-color);
         }
+        /* Datalist correction */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus {
+            -webkit-text-fill-color: var(--text-color);
+            -webkit-box-shadow: 0 0 0px 1000px var(--card-bg) inset;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        /* Navigation en mode sombre */
+        .navbar-dark .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.7%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* Meilleur contraste en mode sombre */
+        [data-theme="dark"] .btn-outline-primary,
+        .btn-outline-primary {
+            color: var(--primary-color) !important;
+            border-color: var(--primary-color) !important;
+            background-color: transparent !important;
+        }
+
+        [data-theme="dark"] .btn-outline-primary:hover,
+        .btn-outline-primary:hover {
+            color: white !important;
+            background-color: var(--primary-color) !important;
+        }
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
@@ -303,6 +334,34 @@
             background: rgba(0, 0, 0, 0.8) !important;
             border-radius: 4px !important;
             padding: 10px !important;
+        }
+        /* Mode sombre pour les éléments de formulaire */
+        select, input, textarea, button {
+            color: var(--text-color);
+        }
+
+        /* Fix pour la navbar en mode sombre */
+        .navbar-dark {
+            background-color: var(--card-bg);
+        }
+
+        .navbar-dark .navbar-nav .nav-link {
+            color: var(--text-color);
+        }
+
+        /* Ajustement pour meilleure lisibilité des boutons en mode sombre */
+        .btn {
+            font-weight: 500;
+        }
+
+        /* Amélioration de la lisibilité des statistiques */
+        #global-stats .currency-stat span:nth-child(2) {
+            font-weight: 500;
+        }
+
+        /* Meilleure visibilité des grilles de graphique */
+        .chart-container canvas {
+            border: 1px solid var(--border-color);
         }
     </style>
 </head>
