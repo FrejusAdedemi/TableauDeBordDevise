@@ -28,7 +28,6 @@ def get_rates(currencies, days=30):
         else:
             print(f"Warning: Les données pour {each_day} sont mal formées ou vides.")
 
-    # pprint(all_rates)
 
     return all_days, all_rates
 

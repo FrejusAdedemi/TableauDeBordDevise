@@ -525,7 +525,14 @@
     };
 
     // Liste blanche des codes devises valides (à adapter si besoin)
-    const validCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'NZD', 'CNY', 'SEK'];
+    const validCurrencies = [
+      'USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'NZD', 'CNY', 'SEK',
+      'NOK', 'DKK', 'HKD', 'SGD', 'ZAR', 'MXN', 'BRL', 'INR', 'RUB', 'KRW',
+      'TRY', 'PLN', 'TWD', 'THB', 'MYR', 'IDR', 'PHP', 'CZK', 'HUF', 'AED',
+      'SAR', 'ILS', 'ARS', 'CLP', 'COP', 'PEN', 'XAF', 'XOF', 'XCD', 'XPF',
+      'MAD', 'DZD', 'TND', 'EGP', 'KES', 'NGN', 'GHS', 'TZS', 'UGX', 'BHD',
+      'OMR', 'QAR', 'KWD', 'VND', 'PKR', 'BDT', 'LKR'
+    ];
 
     // Fonction pour formater les dates
     function formatDate(date) {
@@ -723,7 +730,7 @@
 
         currencies.forEach(currency => {
             if (!realData.currencies[currency]) {
-                console.warn(`Données non disponibles pour ${currency}`);
+                alert(`Devise(s) inconnue(s) ou sans données : ${currency}`);
                 return;
             }
 
